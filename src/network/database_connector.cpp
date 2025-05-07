@@ -423,7 +423,7 @@ void DatabaseConnector::initServerStatsTable()
         "    os TEXT NOT NULL, -- Operating system of the host\n"
         "    connected_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, -- Time when connected\n"
         "    disconnected_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, -- Time when disconnected (saved when disconnected)\n"
-        "    wins INTEGER NOT NULL DEFAULT 0 -- wins at disconnect\n"
+        "    wins INTEGER NOT NULL DEFAULT 0, -- wins at disconnect\n"
         "    ping INTEGER UNSIGNED NOT NULL DEFAULT 0, -- Ping of the host\n"
         "    packet_loss INTEGER NOT NULL DEFAULT 0 -- Mean packet loss count from ENet (saved when disconnected)\n"
         ") WITHOUT ROWID;";
@@ -512,7 +512,7 @@ void DatabaseConnector::initServerStatsTable()
             << "    ROUND(AVG((STRFTIME(\"%s\", disconnected_time) - STRFTIME(\"%s\", connected_time)) / 60.0), 2) AS average_time_played,\n"
             << "    ROUND(MIN((STRFTIME(\"%s\", disconnected_time) - STRFTIME(\"%s\", connected_time)) / 60.0), 2) AS min_time_played,\n"
             << "    ROUND(MAX((STRFTIME(\"%s\", disconnected_time) - STRFTIME(\"%s\", connected_time)) / 60.0), 2) AS max_time_played,\n"
-            << "    SUM(score) AS total_score\n"
+            << "    SUM(wins) AS total_wins\n"
             << "    FROM " << m_server_stats_table << "\n"
             << "    WHERE online_id != 0 GROUP BY online_id ORDER BY num_connections DESC;";
     }
@@ -547,7 +547,7 @@ void DatabaseConnector::initServerStatsTable()
             << "        ROUND(AVG((STRFTIME(\"%s\", disconnected_time) - STRFTIME(\"%s\", connected_time)) / 60.0), 2) AS average_time_played,\n"
             << "        ROUND(MIN((STRFTIME(\"%s\", disconnected_time) - STRFTIME(\"%s\", connected_time)) / 60.0), 2) AS min_time_played,\n"
             << "        ROUND(MAX((STRFTIME(\"%s\", disconnected_time) - STRFTIME(\"%s\", connected_time)) / 60.0), 2) AS max_time_played,\n"
-            << "        SUM(score) AS total_score\n"
+            << "        SUM(wins) AS total_wins\n"
             << "        FROM " << m_server_stats_table << " WHERE online_id != 0 GROUP BY online_id\n"
             << "    ) AS b\n"
             << "    ON b.online_id = a.online_id\n"
