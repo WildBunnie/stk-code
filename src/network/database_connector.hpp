@@ -191,7 +191,7 @@ public:
         unsigned player_count, const std::string& country_code);
     void listBanTable();
     
-    int getTotalWins(int host_id)
+    int getTotalWins(int host_id);
 };
 
 #endif // ifndef DATABASE_CONNECTOR_HPP
