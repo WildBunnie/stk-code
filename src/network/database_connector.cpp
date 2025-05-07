@@ -1000,4 +1000,36 @@ void DatabaseConnector::listBanTable()
         sqlite3_exec(m_db, query.c_str(), printer, NULL, NULL);
     }
 }   // listBanTable
+
+int DatabaseConnector::getTotalWins(int host_id)
+{
+
+    std::string stats_table_name = std::string("v") +
+        StringUtils::toString(ServerConfig::m_server_db_version) + "_" +
+        ServerConfig::m_server_uid + "_stats";
+
+    std::string player_stats_view_name = std::string("v") +
+        StringUtils::toString(ServerConfig::m_server_db_version) + "_" +
+        ServerConfig::m_server_uid + "_player_stats";
+
+    std::vector<std::vector<std::string>> output;
+
+    std::string query = StringUtils::insertValues(
+        "SELECT total_wins FROM %s WHERE online_id = (SELECT online_id FROM %s WHERE host_id = %s) AND online_id != 0;",
+        player_stats_view_name.c_str(),
+        stats_table_name.c_str(),
+        host_id
+    );
+
+    easySQLQuery(query, &output);
+
+    if (!output.empty() && !output[0].empty())
+    {
+        int wins = 0;
+        if (StringUtils::fromString(output[0][0], wins))
+            return wins;
+    }
+
+    return -1;
+}
 #endif // ENABLE_SQLITE3

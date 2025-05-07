@@ -190,6 +190,8 @@ public:
     void onPlayerJoinQueries(std::shared_ptr<STKPeer> peer, uint32_t online_id,
         unsigned player_count, const std::string& country_code);
     void listBanTable();
+    
+    int getTotalWins(int host_id)
 };
 
 #endif // ifndef DATABASE_CONNECTOR_HPP

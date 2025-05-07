@@ -4889,6 +4889,27 @@ unmute_error:
         peer->sendPacket(chat, true/*reliable*/);
         delete chat;
     }
+#ifdef ENABLE_SQLITE3
+    else if (argv[0] == "wins")
+    {
+        NetworkString* chat = getNetworkString();
+        chat->addUInt8(LE_CHAT);
+        chat->setSynchronous(true);
+
+        std::string msg;
+        int wins = m_db_connector->getTotalWins(peer->getHostId());
+        if (wins == -1){
+            msg = "Offline accounts are not in the leaderboard";
+        }
+        else{
+            msg = "You have " + std::to_string(wins) + " wins";
+        }
+
+        chat->encodeString16(StringUtils::utf8ToWide(msg));
+        peer->sendPacket(chat, true/*reliable*/);
+        delete chat;
+    }
+#endif 
     else
     {
         NetworkString* chat = getNetworkString();
