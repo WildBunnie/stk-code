@@ -2350,6 +2350,10 @@ void ServerLobby::checkRaceFinished()
         ranking_changes_indication = 1;
     m_result_ns->addUInt8(ranking_changes_indication);
 
+#ifdef ENABLE_SQLITE3
+    m_db_connector->writeWinsInfoTable(event->getPeer());
+#endif
+
     if (ServerConfig::m_ranked)
     {
         computeNewRankings();

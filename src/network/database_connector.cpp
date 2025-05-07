@@ -381,6 +381,19 @@ void DatabaseConnector::writeDisconnectInfoTable(STKPeer* peer)
     easySQLQuery(query);
 }   // writeDisconnectInfoTable
 
+void DatabaseConnector::writeWinsInfoTable(STKPeer* peer)
+{
+    if (m_server_stats_table.empty())
+        return;
+
+    std::string query = StringUtils::insertValues(
+        "UPDATE %s SET wins = wins + 1 WHERE host_id = %u;",
+        m_server_stats_table.c_str(),
+        peer->getHostId());
+
+    easySQLQuery(query);
+}   // writeWinsInfoTable
+
 //-----------------------------------------------------------------------------
 /** Creates necessary tables and views if they don't exist yet in the database.
  *   As the function is invoked during the server launch, it also updates rows
@@ -410,6 +423,7 @@ void DatabaseConnector::initServerStatsTable()
         "    os TEXT NOT NULL, -- Operating system of the host\n"
         "    connected_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, -- Time when connected\n"
         "    disconnected_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, -- Time when disconnected (saved when disconnected)\n"
+        "    wins INTEGER NOT NULL DEFAULT 0 -- wins at disconnect\n"
         "    ping INTEGER UNSIGNED NOT NULL DEFAULT 0, -- Ping of the host\n"
         "    packet_loss INTEGER NOT NULL DEFAULT 0 -- Mean packet loss count from ENet (saved when disconnected)\n"
         ") WITHOUT ROWID;";
@@ -498,6 +512,7 @@ void DatabaseConnector::initServerStatsTable()
             << "    ROUND(AVG((STRFTIME(\"%s\", disconnected_time) - STRFTIME(\"%s\", connected_time)) / 60.0), 2) AS average_time_played,\n"
             << "    ROUND(MIN((STRFTIME(\"%s\", disconnected_time) - STRFTIME(\"%s\", connected_time)) / 60.0), 2) AS min_time_played,\n"
             << "    ROUND(MAX((STRFTIME(\"%s\", disconnected_time) - STRFTIME(\"%s\", connected_time)) / 60.0), 2) AS max_time_played\n"
+            << "    SUM(score) AS total_score\n"
             << "    FROM " << m_server_stats_table << "\n"
             << "    WHERE online_id != 0 GROUP BY online_id ORDER BY num_connections DESC;";
     }
@@ -532,6 +547,7 @@ void DatabaseConnector::initServerStatsTable()
             << "        ROUND(AVG((STRFTIME(\"%s\", disconnected_time) - STRFTIME(\"%s\", connected_time)) / 60.0), 2) AS average_time_played,\n"
             << "        ROUND(MIN((STRFTIME(\"%s\", disconnected_time) - STRFTIME(\"%s\", connected_time)) / 60.0), 2) AS min_time_played,\n"
             << "        ROUND(MAX((STRFTIME(\"%s\", disconnected_time) - STRFTIME(\"%s\", connected_time)) / 60.0), 2) AS max_time_played\n"
+            << "        SUM(score) AS total_score\n"
             << "        FROM " << m_server_stats_table << " WHERE online_id != 0 GROUP BY online_id\n"
             << "    ) AS b\n"
             << "    ON b.online_id = a.online_id\n"
