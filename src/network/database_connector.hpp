@@ -162,7 +162,7 @@ public:
     static void insideIPv6CIDRSQL(sqlite3_context* context, int argc,
                                                          sqlite3_value** argv);
     void writeDisconnectInfoTable(STKPeer* peer);
-    void writeWinsInfoTable(STKPeer* peer);
+    void writeWinsInfoTable(uint32_t host_id);
     void initServerStatsTable();
     bool writeReport(
          STKPeer* reporter, std::shared_ptr<NetworkPlayerProfile> reporter_npp,
