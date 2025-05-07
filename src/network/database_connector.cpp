@@ -463,7 +463,7 @@ void DatabaseConnector::initServerStatsTable()
     oss << "    port, online_id, username, player_num,\n"
         << "    " << m_server_stats_table << ".country_code AS country_code, country_flag, country_name, version, os,\n"
         << "    ROUND((STRFTIME(\"%s\", disconnected_time) - STRFTIME(\"%s\", connected_time)) / 60.0, 2) AS time_played,\n"
-        << "    connected_time, disconnected_time, ping, packet_loss FROM " << m_server_stats_table << "\n"
+        << "    wins, connected_time, disconnected_time, ping, packet_loss FROM " << m_server_stats_table << "\n"
         << "    LEFT JOIN " << country_table_name << " ON "
         <<      country_table_name << ".country_code = " << m_server_stats_table << ".country_code\n"
         << "    ORDER BY connected_time DESC;";
@@ -486,7 +486,7 @@ void DatabaseConnector::initServerStatsTable()
     oss << "    port, online_id, username, player_num,\n"
         << "    " << m_server_stats_table << ".country_code AS country_code, country_flag, country_name, version, os,\n"
         << "    ROUND((STRFTIME(\"%s\", 'now') - STRFTIME(\"%s\", connected_time)) / 60.0, 2) AS time_played,\n"
-        << "    connected_time, ping FROM " << m_server_stats_table << "\n"
+        << "    wins, connected_time, ping FROM " << m_server_stats_table << "\n"
         << "    LEFT JOIN " << country_table_name << " ON "
         <<      country_table_name << ".country_code = " << m_server_stats_table << ".country_code\n"
         << "    WHERE connected_time = disconnected_time;";
@@ -527,7 +527,7 @@ void DatabaseConnector::initServerStatsTable()
             << "    b.num_connections, b.first_connected_time, b.first_disconnected_time,\n"
             << "    a.connected_time AS last_connected_time, a.disconnected_time AS last_disconnected_time,\n"
             << "    a.time_played AS last_time_played, b.total_time_played, b.average_time_played,\n"
-            << "    b.min_time_played, b.max_time_played\n"
+            << "    b.min_time_played, b.max_time_played, b.total_wins\n"
             << "    FROM\n"
             << "    (\n"
             << "        SELECT *,\n"
