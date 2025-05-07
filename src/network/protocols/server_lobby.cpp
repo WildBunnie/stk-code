@@ -2301,6 +2301,22 @@ void ServerLobby::checkRaceFinished()
     // Save race result before delete the world
     m_result_ns->clear();
     m_result_ns->addUInt8(LE_RACE_FINISHED);
+
+#ifdef ENABLE_SQLITE3
+    float fastest_lap = FLT_MAX;
+    uint32_t host_id = -1;
+    for (unsigned i = 0; i < RaceManager::get()->getNumPlayers(); i++)
+    {
+        float lap_time = RaceManager::get()->getKartRaceTime(i);
+        if (lap_time < fastest_lap)
+        {
+            fastest_lap = lap_time;
+            host_id = RaceManager::get()->getKartInfo(i).getHostId();
+        }     
+    }
+    m_db_connector->writeWinsInfoTable(host_id);
+#endif
+
     if (m_game_setup->isGrandPrix())
     {
         // fastest lap
@@ -2349,10 +2365,6 @@ void ServerLobby::checkRaceFinished()
     if (ServerConfig::m_ranked && RaceManager::get()->modeHasLaps())
         ranking_changes_indication = 1;
     m_result_ns->addUInt8(ranking_changes_indication);
-
-#ifdef ENABLE_SQLITE3
-    m_db_connector->writeWinsInfoTable(event->getPeer());
-#endif
 
     if (ServerConfig::m_ranked)
     {

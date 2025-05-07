@@ -381,7 +381,7 @@ void DatabaseConnector::writeDisconnectInfoTable(STKPeer* peer)
     easySQLQuery(query);
 }   // writeDisconnectInfoTable
 
-void DatabaseConnector::writeWinsInfoTable(STKPeer* peer)
+void DatabaseConnector::writeWinsInfoTable(uint32_t host_id)
 {
     if (m_server_stats_table.empty())
         return;
@@ -389,7 +389,7 @@ void DatabaseConnector::writeWinsInfoTable(STKPeer* peer)
     std::string query = StringUtils::insertValues(
         "UPDATE %s SET wins = wins + 1 WHERE host_id = %u;",
         m_server_stats_table.c_str(),
-        peer->getHostId());
+        host_id);
 
     easySQLQuery(query);
 }   // writeWinsInfoTable
