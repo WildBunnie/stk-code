@@ -2305,10 +2305,15 @@ void ServerLobby::checkRaceFinished()
 #ifdef ENABLE_SQLITE3
     int highest_score = -1;
     uint32_t host_id = -1;
-    Log::debug("ServerLobby",
-        "num players %d.", RaceManager::get()->getNumPlayers());
+    int human_players = 0;
     for (unsigned i = 0; i < RaceManager::get()->getNumPlayers(); i++)
     {
+        irr::core::stringw wname = RaceManager::get()->getKartInfo(i).getPlayerName();
+        std::string name = irr::core::stringc(wname.c_str()).c_str();
+        
+        bool is_bot = name.rfind("Bot ", 0) == 0 && std::isdigit(name[4]);
+        if (!is_bot) human_players++;
+
         int score = RaceManager::get()->getKartScore(i);
         if (score > highest_score)
         {
@@ -2316,7 +2321,9 @@ void ServerLobby::checkRaceFinished()
             host_id = RaceManager::get()->getKartInfo(i).getHostId();
         }     
     }
-    m_db_connector->writeWinsInfoTable(host_id);
+    if(human_players > 1){
+        m_db_connector->writeWinsInfoTable(host_id);
+    }
 #endif
 
     if (m_game_setup->isGrandPrix())
