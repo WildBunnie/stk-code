@@ -2303,14 +2303,14 @@ void ServerLobby::checkRaceFinished()
     m_result_ns->addUInt8(LE_RACE_FINISHED);
 
 #ifdef ENABLE_SQLITE3
-    float fastest_lap = FLT_MAX;
+    int highest_score = -1;
     uint32_t host_id = -1;
     for (unsigned i = 0; i < RaceManager::get()->getNumPlayers(); i++)
     {
-        float lap_time = RaceManager::get()->getKartRaceTime(i);
-        if (lap_time < fastest_lap)
+        int score = RaceManager::get()->getKartScore(i);
+        if (score > highest_score)
         {
-            fastest_lap = lap_time;
+            highest_score = score;
             host_id = RaceManager::get()->getKartInfo(i).getHostId();
         }     
     }
