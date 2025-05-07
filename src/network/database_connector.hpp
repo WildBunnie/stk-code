@@ -192,6 +192,7 @@ public:
     void listBanTable();
     
     int getTotalWins(int host_id);
+    std::string getTopWins(int limit);
 };
 
 #endif // ifndef DATABASE_CONNECTOR_HPP

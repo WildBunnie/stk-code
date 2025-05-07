@@ -1032,4 +1032,30 @@ int DatabaseConnector::getTotalWins(int host_id)
 
     return -1;
 }
+
+std::string DatabaseConnector::getTopWins(int limit)
+{
+    std::string player_stats_view_name = std::string("v") +
+        StringUtils::toString(ServerConfig::m_server_db_version) + "_" +
+        ServerConfig::m_server_uid + "_player_stats";
+
+    std::vector<std::vector<std::string>> output;
+
+    std::string query = StringUtils::insertValues(
+        "SELECT username, total_wins FROM %s WHERE online_id != 0 ORDER BY total_wins DESC LIMIT %s;",
+        player_stats_view_name.c_str(),
+        limit
+    );
+
+    easySQLQuery(query, &output);
+
+    std::string result;
+    for (const auto& row : output)
+    {
+        if (row.size() < 2) continue;
+        result += row[0] + ": " + row[1] + "\n";
+    }
+
+    return result;
+}
 #endif // ENABLE_SQLITE3

@@ -4909,6 +4909,18 @@ unmute_error:
         peer->sendPacket(chat, true/*reliable*/);
         delete chat;
     }
+    else if (argv[0] == "top")
+    {
+        NetworkString* chat = getNetworkString();
+        chat->addUInt8(LE_CHAT);
+        chat->setSynchronous(true);
+
+        std::string msg = m_db_connector->getTopWins(5);
+        
+        chat->encodeString16(StringUtils::utf8ToWide(msg));
+        peer->sendPacket(chat, true/*reliable*/);
+        delete chat;
+    }
 #endif 
     else
     {
