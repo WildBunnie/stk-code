@@ -1050,10 +1050,12 @@ std::string DatabaseConnector::getTopWins(int limit)
     easySQLQuery(query, &output);
 
     std::string result;
-    for (const auto& row : output)
+    for (size_t i = 0; i < output.size(); ++i)
     {
-        if (row.size() < 2) continue;
-        result += row[0] + ": " + row[1] + "\n";
+        result += output[i][0] + ": " + output[i][1];
+        
+        if (i != output.size() - 1)
+            result += "\n";
     }
 
     return result;
