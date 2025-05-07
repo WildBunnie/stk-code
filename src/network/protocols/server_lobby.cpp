@@ -2305,6 +2305,8 @@ void ServerLobby::checkRaceFinished()
 #ifdef ENABLE_SQLITE3
     int highest_score = -1;
     uint32_t host_id = -1;
+    Log::debug("ServerLobby",
+        "num players %d.", RaceManager::get()->getNumPlayers());
     for (unsigned i = 0; i < RaceManager::get()->getNumPlayers(); i++)
     {
         int score = RaceManager::get()->getKartScore(i);
