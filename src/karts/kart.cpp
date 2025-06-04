@@ -1361,6 +1361,34 @@ void Kart::eliminate()
  */
 void Kart::update(int ticks)
 {
+    if (NetworkConfig::get()->isServer())
+    {
+        // Check if kart is in the air (no ground contact)
+        bool is_airborne = isOnGround() == false;
+        
+        // Check if drift button pressed this tick
+        bool drift_pressed = m_controls.getSkidControl() != KartControl::SC_NONE;
+        
+        if (is_airborne && drift_pressed && !m_air_boost_given)
+        {
+            m_air_boost_given = true;
+        }
+        
+        if (!is_airborne)
+        {
+            if(m_air_boost_given){
+                // handleZipper(NULL,true);
+                m_max_speed->instantSpeedIncrease(MaxSpeed::MS_INCREASE_ZIPPER,
+                                            80.0f,  // max_speed_increase (15 km/h faster)
+                                            100.0f,   // speed_gain (acceleration boost)
+                                            1000.0f, // engine_force (extra power)
+                                            stk_config->time2Ticks(2.0f),    // duration (2 seconds)
+                                            stk_config->time2Ticks(2.0f));
+                SFXManager::get()->quickSound("zipper");
+            }
+            m_air_boost_given = false;
+        }
+    }
     if (m_network_finish_check_ticks > 0 &&
         World::getWorld()->getTicksSinceStart() >
         m_network_finish_check_ticks &&

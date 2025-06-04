@@ -78,6 +78,8 @@ protected:
     /** Offset of the graphical kart chassis from the physical chassis. */
     float m_graphical_y_offset;
 
+    bool m_air_boost_given = false;
+
     /** The coordinates of the front of the kart, used to determine when a
      *  new lap is triggered. */
     Vec3 m_xyz_front;
