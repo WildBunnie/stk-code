@@ -162,6 +162,7 @@ public:
     static void insideIPv6CIDRSQL(sqlite3_context* context, int argc,
                                                          sqlite3_value** argv);
     void writeDisconnectInfoTable(STKPeer* peer);
+    void writeWinsInfoTable(uint32_t host_id);
     void initServerStatsTable();
     bool writeReport(
          STKPeer* reporter, std::shared_ptr<NetworkPlayerProfile> reporter_npp,
@@ -189,6 +190,9 @@ public:
     void onPlayerJoinQueries(std::shared_ptr<STKPeer> peer, uint32_t online_id,
         unsigned player_count, const std::string& country_code);
     void listBanTable();
+    
+    int getTotalWins(int host_id);
+    std::string getTopWins(int limit);
 };
 
 #endif // ifndef DATABASE_CONNECTOR_HPP

@@ -2301,6 +2301,31 @@ void ServerLobby::checkRaceFinished()
     // Save race result before delete the world
     m_result_ns->clear();
     m_result_ns->addUInt8(LE_RACE_FINISHED);
+
+#ifdef ENABLE_SQLITE3
+    int highest_score = -1;
+    uint32_t host_id = -1;
+    int human_players = 0;
+    for (unsigned i = 0; i < RaceManager::get()->getNumPlayers(); i++)
+    {
+        irr::core::stringw wname = RaceManager::get()->getKartInfo(i).getPlayerName();
+        std::string name = irr::core::stringc(wname.c_str()).c_str();
+        
+        bool is_bot = name.rfind("Bot ", 0) == 0 && std::isdigit(name[4]);
+        if (!is_bot) human_players++;
+
+        int score = RaceManager::get()->getKartScore(i);
+        if (score > highest_score)
+        {
+            highest_score = score;
+            host_id = RaceManager::get()->getKartInfo(i).getHostId();
+        }     
+    }
+    if(human_players > 1){
+        m_db_connector->writeWinsInfoTable(host_id);
+    }
+#endif
+
     if (m_game_setup->isGrandPrix())
     {
         // fastest lap
@@ -4864,6 +4889,39 @@ unmute_error:
         peer->sendPacket(chat, true/*reliable*/);
         delete chat;
     }
+#ifdef ENABLE_SQLITE3
+    else if (argv[0] == "wins")
+    {
+        NetworkString* chat = getNetworkString();
+        chat->addUInt8(LE_CHAT);
+        chat->setSynchronous(true);
+
+        std::string msg;
+        int wins = m_db_connector->getTotalWins(peer->getHostId());
+        if (wins == -1){
+            msg = "Offline accounts are not in the leaderboard";
+        }
+        else{
+            msg = "You have " + std::to_string(wins) + " wins";
+        }
+
+        chat->encodeString16(StringUtils::utf8ToWide(msg));
+        peer->sendPacket(chat, true/*reliable*/);
+        delete chat;
+    }
+    else if (argv[0] == "top")
+    {
+        NetworkString* chat = getNetworkString();
+        chat->addUInt8(LE_CHAT);
+        chat->setSynchronous(true);
+
+        std::string msg = m_db_connector->getTopWins(5);
+        
+        chat->encodeString16(StringUtils::utf8ToWide(msg));
+        peer->sendPacket(chat, true/*reliable*/);
+        delete chat;
+    }
+#endif 
     else
     {
         NetworkString* chat = getNetworkString();

@@ -381,6 +381,19 @@ void DatabaseConnector::writeDisconnectInfoTable(STKPeer* peer)
     easySQLQuery(query);
 }   // writeDisconnectInfoTable
 
+void DatabaseConnector::writeWinsInfoTable(uint32_t host_id)
+{
+    if (m_server_stats_table.empty())
+        return;
+
+    std::string query = StringUtils::insertValues(
+        "UPDATE %s SET wins = wins + 1 WHERE host_id = %u;",
+        m_server_stats_table.c_str(),
+        host_id);
+
+    easySQLQuery(query);
+}   // writeWinsInfoTable
+
 //-----------------------------------------------------------------------------
 /** Creates necessary tables and views if they don't exist yet in the database.
  *   As the function is invoked during the server launch, it also updates rows
@@ -410,6 +423,7 @@ void DatabaseConnector::initServerStatsTable()
         "    os TEXT NOT NULL, -- Operating system of the host\n"
         "    connected_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, -- Time when connected\n"
         "    disconnected_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, -- Time when disconnected (saved when disconnected)\n"
+        "    wins INTEGER NOT NULL DEFAULT 0, -- wins at disconnect\n"
         "    ping INTEGER UNSIGNED NOT NULL DEFAULT 0, -- Ping of the host\n"
         "    packet_loss INTEGER NOT NULL DEFAULT 0 -- Mean packet loss count from ENet (saved when disconnected)\n"
         ") WITHOUT ROWID;";
@@ -449,7 +463,7 @@ void DatabaseConnector::initServerStatsTable()
     oss << "    port, online_id, username, player_num,\n"
         << "    " << m_server_stats_table << ".country_code AS country_code, country_flag, country_name, version, os,\n"
         << "    ROUND((STRFTIME(\"%s\", disconnected_time) - STRFTIME(\"%s\", connected_time)) / 60.0, 2) AS time_played,\n"
-        << "    connected_time, disconnected_time, ping, packet_loss FROM " << m_server_stats_table << "\n"
+        << "    wins, connected_time, disconnected_time, ping, packet_loss FROM " << m_server_stats_table << "\n"
         << "    LEFT JOIN " << country_table_name << " ON "
         <<      country_table_name << ".country_code = " << m_server_stats_table << ".country_code\n"
         << "    ORDER BY connected_time DESC;";
@@ -472,7 +486,7 @@ void DatabaseConnector::initServerStatsTable()
     oss << "    port, online_id, username, player_num,\n"
         << "    " << m_server_stats_table << ".country_code AS country_code, country_flag, country_name, version, os,\n"
         << "    ROUND((STRFTIME(\"%s\", 'now') - STRFTIME(\"%s\", connected_time)) / 60.0, 2) AS time_played,\n"
-        << "    connected_time, ping FROM " << m_server_stats_table << "\n"
+        << "    wins, connected_time, ping FROM " << m_server_stats_table << "\n"
         << "    LEFT JOIN " << country_table_name << " ON "
         <<      country_table_name << ".country_code = " << m_server_stats_table << ".country_code\n"
         << "    WHERE connected_time = disconnected_time;";
@@ -497,7 +511,8 @@ void DatabaseConnector::initServerStatsTable()
             << "    ROUND(SUM((STRFTIME(\"%s\", disconnected_time) - STRFTIME(\"%s\", connected_time)) / 60.0), 2) AS total_time_played,\n"
             << "    ROUND(AVG((STRFTIME(\"%s\", disconnected_time) - STRFTIME(\"%s\", connected_time)) / 60.0), 2) AS average_time_played,\n"
             << "    ROUND(MIN((STRFTIME(\"%s\", disconnected_time) - STRFTIME(\"%s\", connected_time)) / 60.0), 2) AS min_time_played,\n"
-            << "    ROUND(MAX((STRFTIME(\"%s\", disconnected_time) - STRFTIME(\"%s\", connected_time)) / 60.0), 2) AS max_time_played\n"
+            << "    ROUND(MAX((STRFTIME(\"%s\", disconnected_time) - STRFTIME(\"%s\", connected_time)) / 60.0), 2) AS max_time_played,\n"
+            << "    SUM(wins) AS total_wins\n"
             << "    FROM " << m_server_stats_table << "\n"
             << "    WHERE online_id != 0 GROUP BY online_id ORDER BY num_connections DESC;";
     }
@@ -512,7 +527,7 @@ void DatabaseConnector::initServerStatsTable()
             << "    b.num_connections, b.first_connected_time, b.first_disconnected_time,\n"
             << "    a.connected_time AS last_connected_time, a.disconnected_time AS last_disconnected_time,\n"
             << "    a.time_played AS last_time_played, b.total_time_played, b.average_time_played,\n"
-            << "    b.min_time_played, b.max_time_played\n"
+            << "    b.min_time_played, b.max_time_played, b.total_wins\n"
             << "    FROM\n"
             << "    (\n"
             << "        SELECT *,\n"
@@ -531,7 +546,8 @@ void DatabaseConnector::initServerStatsTable()
             << "        ROUND(SUM((STRFTIME(\"%s\", disconnected_time) - STRFTIME(\"%s\", connected_time)) / 60.0), 2) AS total_time_played,\n"
             << "        ROUND(AVG((STRFTIME(\"%s\", disconnected_time) - STRFTIME(\"%s\", connected_time)) / 60.0), 2) AS average_time_played,\n"
             << "        ROUND(MIN((STRFTIME(\"%s\", disconnected_time) - STRFTIME(\"%s\", connected_time)) / 60.0), 2) AS min_time_played,\n"
-            << "        ROUND(MAX((STRFTIME(\"%s\", disconnected_time) - STRFTIME(\"%s\", connected_time)) / 60.0), 2) AS max_time_played\n"
+            << "        ROUND(MAX((STRFTIME(\"%s\", disconnected_time) - STRFTIME(\"%s\", connected_time)) / 60.0), 2) AS max_time_played,\n"
+            << "        SUM(wins) AS total_wins\n"
             << "        FROM " << m_server_stats_table << " WHERE online_id != 0 GROUP BY online_id\n"
             << "    ) AS b\n"
             << "    ON b.online_id = a.online_id\n"
@@ -984,4 +1000,64 @@ void DatabaseConnector::listBanTable()
         sqlite3_exec(m_db, query.c_str(), printer, NULL, NULL);
     }
 }   // listBanTable
+
+int DatabaseConnector::getTotalWins(int host_id)
+{
+
+    std::string stats_table_name = std::string("v") +
+        StringUtils::toString(ServerConfig::m_server_db_version) + "_" +
+        ServerConfig::m_server_uid + "_stats";
+
+    std::string player_stats_view_name = std::string("v") +
+        StringUtils::toString(ServerConfig::m_server_db_version) + "_" +
+        ServerConfig::m_server_uid + "_player_stats";
+
+    std::vector<std::vector<std::string>> output;
+
+    std::string query = StringUtils::insertValues(
+        "SELECT total_wins FROM %s WHERE online_id = (SELECT online_id FROM %s WHERE host_id = %s) AND online_id != 0;",
+        player_stats_view_name.c_str(),
+        stats_table_name.c_str(),
+        host_id
+    );
+
+    easySQLQuery(query, &output);
+
+    if (!output.empty() && !output[0].empty())
+    {
+        int wins = 0;
+        if (StringUtils::fromString(output[0][0], wins))
+            return wins;
+    }
+
+    return -1;
+}
+
+std::string DatabaseConnector::getTopWins(int limit)
+{
+    std::string player_stats_view_name = std::string("v") +
+        StringUtils::toString(ServerConfig::m_server_db_version) + "_" +
+        ServerConfig::m_server_uid + "_player_stats";
+
+    std::vector<std::vector<std::string>> output;
+
+    std::string query = StringUtils::insertValues(
+        "SELECT username, total_wins FROM %s WHERE online_id != 0 ORDER BY total_wins DESC LIMIT %s;",
+        player_stats_view_name.c_str(),
+        limit
+    );
+
+    easySQLQuery(query, &output);
+
+    std::string result;
+    for (size_t i = 0; i < output.size(); ++i)
+    {
+        result += output[i][0] + ": " + output[i][1];
+        
+        if (i != output.size() - 1)
+            result += "\n";
+    }
+
+    return result;
+}
 #endif // ENABLE_SQLITE3
